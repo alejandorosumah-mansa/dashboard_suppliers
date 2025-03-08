@@ -1,0 +1,72 @@
+{% extends "base.html" %} {% block title %}Activity Detail - {{ producer.name
+}}{% endblock %} {% block content %}
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-12">
+      <h2>Activity Details</h2>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+          <li class="breadcrumb-item">
+            <a href="/producer/{{ producer.id }}">{{ producer.name }}</a>
+          </li>
+          <li class="breadcrumb-item active" aria-current="page">
+            Activity on {{ activity.date }}
+          </li>
+        </ol>
+      </nav>
+    </div>
+  </div>
+
+  <div class="row mt-3">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header">
+          <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Activity on {{ activity.date }}</h5>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-12">
+              <p><strong>Date:</strong> {{ activity.date }}</p>
+              <p><strong>Activity:</strong> {{ activity.activity }}</p>
+
+              <!-- If there are additional fields in the activity data, display them here -->
+              {% for key, value in activity.items() %} {% if key not in ['date',
+              'activity'] %}
+              <p><strong>{{ key|title }}:</strong> {{ value }}</p>
+              {% endif %} {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <!-- Farm Image section -->
+      <div class="card">
+        <div class="card-header">Farm Image</div>
+        <div class="card-body">
+          {% if image_info %}
+          <!-- Use the local path for the image -->
+          <img
+            src="{{ image_info.local_path }}"
+            class="img-fluid rounded"
+            alt="Farm Image"
+          />
+          <div class="mt-2 text-muted small">
+            <p><strong>Filename:</strong> {{ image_info.filename }}</p>
+            <p><strong>Date:</strong> {{ image_info.created_date }}</p>
+          </div>
+          {% else %}
+          <div class="text-center text-muted p-4">
+            <p>No images available</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

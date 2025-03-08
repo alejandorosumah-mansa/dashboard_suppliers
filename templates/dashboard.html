@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cocoa Cooperative Dashboard</title>
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      :root {
+        --primary-color: #5d4037;
+        --secondary-color: #8d6e63;
+        --light-color: #d7ccc8;
+        --accent-color: #ff9800;
+        --success-color: #4caf50;
+        --warning-color: #ffc107;
+        --danger-color: #f44336;
+      }
+
+      body {
+        background-color: #f5f5f5;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      .sidebar {
+        background-color: var(--primary-color);
+        color: white;
+        height: 100%;
+        min-height: 100vh;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .nav-link {
+        color: rgba(255, 255, 255, 0.8);
+        border-radius: 5px;
+        margin: 5px 0;
+        padding: 10px 15px;
+        transition: all 0.3s;
+      }
+
+      .nav-link:hover,
+      .nav-link.active {
+        background-color: var(--secondary-color);
+        color: white;
+      }
+
+      .dashboard-title {
+        color: var(--primary-color);
+        font-weight: bold;
+        border-bottom: 2px solid var(--secondary-color);
+        padding-bottom: 10px;
+      }
+
+      .card {
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s;
+        border: none;
+        margin-bottom: 20px;
+      }
+
+      .card:hover {
+        transform: translateY(-5px);
+      }
+
+      .card-header {
+        border-radius: 10px 10px 0 0 !important;
+        background-color: var(--primary-color);
+        color: white;
+        font-weight: bold;
+      }
+
+      .stat-card {
+        padding: 20px;
+        border-radius: 10px;
+        background-color: white;
+        height: 100%;
+      }
+
+      .stat-icon {
+        font-size: 2.5rem;
+        color: var(--secondary-color);
+      }
+
+      .farmer-card {
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      .farmer-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+      }
+
+      .notification-badge {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background-color: var(--accent-color);
+        color: white;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .health-indicator {
+        height: 10px;
+        border-radius: 5px;
+        margin-top: 5px;
+      }
+
+      .profile-img {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid var(--light-color);
+      }
+
+      .alert-section {
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        background-color: #fff8e1;
+        border-left: 5px solid var(--warning-color);
+      }
+
+      .weather-card {
+        background: linear-gradient(135deg, #64b5f6, #1976d2);
+        color: white;
+      }
+
+      .chat-preview {
+        max-height: 400px;
+        overflow-y: auto;
+      }
+
+      .message {
+        padding: 10px 15px;
+        border-radius: 15px;
+        margin-bottom: 10px;
+        max-width: 80%;
+      }
+
+      .message.farmer {
+        background-color: var(--light-color);
+        margin-right: auto;
+      }
+
+      .message.advisor {
+        background-color: var(--primary-color);
+        color: white;
+        margin-left: auto;
+      }
+
+      .farm-thumbnail {
+        width: 100%;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 5px;
+        transition: all 0.3s;
+      }
+
+      .farm-thumbnail:hover {
+        transform: scale(1.05);
+      }
+
+      .label-tag {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        margin-right: 5px;
+        margin-bottom: 5px;
+        background-color: var(--light-color);
+      }
+
+      /* Mobile responsiveness */
+      @media (max-width: 768px) {
+        .sidebar {
+          position: fixed;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          z-index: 100;
+          min-height: auto;
+          height: auto;
+        }
+
+        .sidebar .nav {
+          display: flex;
+          justify-content: space-around;
+        }
+
+        .nav-link {
+          text-align: center;
+          padding: 10px;
+          margin: 0;
+        }
+
+        .nav-link i {
+          display: block;
+          margin: 0 auto 5px;
+        }
+
+        .main-content {
+          margin-bottom: 80px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container-fluid">
+      <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-2 sidebar p-3">
+          <h4 class="text-center my-4">
+            <i class="fas fa-seedling me-2"></i>CocoaLink
+          </h4>
+          <div class="d-flex flex-column">
+            <a href="#" class="nav-link active py-2 px-3">
+              <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+            </a>
+            <a href="#" class="nav-link py-2 px-3">
+              <i class="fas fa-users me-2"></i> Producers
+            </a>
+            <a href="#" class="nav-link py-2 px-3">
+              <i class="fas fa-chart-line me-2"></i> Analytics
+            </a>
+            <a href="#" class="nav-link py-2 px-3">
+              <i class="fas fa-leaf me-2"></i> Tree Health
+            </a>
+            <a href="#" class="nav-link py-2 px-3">
+              <i class="fas fa-comment me-2"></i> Messages
+            </a>
+            <a href="#" class="nav-link py-2 px-3">
+              <i class="fas fa-calendar-alt me-2"></i> Schedule
+            </a>
+            <a href="#" class="nav-link py-2 px-3">
+              <i class="fas fa-file-alt me-2"></i> Reports
+            </a>
+            <a href="#" class="nav-link py-2 px-3">
+              <i class="fas fa-cog me-2"></i> Settings
+            </a>
+          </div>
+
+          <div class="mt-auto pt-4">
+            <div class="text-center">
+              <p class="mb-0 text-light">Latest app update:</p>
+              <small class="text-light">v2.3.4 - 2023-06-25</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-10 p-4 main-content">
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="dashboard-title">{{ coop_info.name }} Dashboard</h2>
+            <div>
+              <span class="badge bg-success me-2">
+                <i class="fas fa-check me-1"></i> Connected to App Network
+              </span>
+              <button class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-sync-alt me-1"></i> Last updated: Today 10:45
+                AM
+              </button>
+            </div>
+          </div>
+
+          <!-- Alert Section -->
+          <div class="alert-section mb-4">
+            <div class="d-flex align-items-center">
+              <i class="fas fa-exclamation-triangle text-warning me-3 fs-4"></i>
+              <div>
+                <h5 class="mb-1">Recent Alerts</h5>
+                <p class="mb-0">
+                  5 producers reported pest issues in the last 7 days. 3
+                  producers have trees requiring immediate attention.
+                </p>
+              </div>
+              <button class="btn btn-warning ms-auto">View Details</button>
+            </div>
+          </div>
+
+          <!-- Summary Stats Row -->
+          <div class="row mb-4">
+            <div class="col-md-3">
+              <div class="stat-card">
+                <div class="d-flex justify-content-between">
+                  <div>
+                    <h5>Active Producers</h5>
+                    <h2 class="mb-0">{{ coop_info.active_members }}</h2>
+                    <small class="text-muted"
+                      >out of {{ coop_info.total_members }} members</small
+                    >
+                  </div>
+                  <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                  </div>
+                </div>
+                <div class="progress mt-3" style="height: 10px">
+                  <div
+                    class="progress-bar bg-success"
+                    role="progressbar"
+                    style="width: {{ (coop_info.active_members / coop_info.total_members) * 100 }}%"
+                    aria-valuenow="{{ coop_info.active_members }}"
+                    aria-valuemin="0"
+                    aria-valuemax="{{ coop_info.total_members }}"
+                  ></div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="stat-card">
+                <div class="d-flex justify-content-between">
+                  <div>
+                    <h5>Total Trees</h5>
+                    <h2 class="mb-0">{{ "{:,}".format(total_trees) }}</h2>
+                    <small class="text-muted"
+                      >across {{ coop_info.total_hectares }} hectares</small
+                    >
+                  </div>
+                  <div class="stat-icon">
+                    <i class="fas fa-tree"></i>
+                  </div>
+                </div>
+                <div class="mt-3">
+                  <div class="d-flex justify-content-between mb-1">
+                    <small>Average Health</small>
+                    <small>{{ "%.1f"|format(avg_health) }}%</small>
+                  </div>
+                  <div class="progress" style="height: 10px">
+                    <div
+                      class="progress-bar bg-success"
+                      role="progressbar"
+                      style="width: {{ avg_health }}%"
+                      aria-valuenow="{{ avg_health }}"
+                      aria-valuemin="0"
+                      aria-valuemax="100"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="stat-card">
+                <div class="d-flex justify-content-between">
+                  <div>
+                    <h5>2022 Yield</h5>
+                    <h2 class="mb-0">{{ "{:,}".format(total_yield_2022) }}</h2>
+                    <small class="text-muted">kilograms of cocoa</small>
+                  </div>
+                  <div class="stat-icon">
+                    <i class="fas fa-balance-scale"></i>
+                  </div>
+                </div>
+                <div class="mt-3">
+                  <div class="d-flex justify-content-between mb-1">
+                    <small>Organic Certified</small>
+                    <small>84%</small>
+                  </div>
+                  <div class="progress" style="height: 10px">
+                    <div
+                      class="progress-bar bg-info"
+                      role="progressbar"
+                      style="width: 84%"
+                      aria-valuenow="84"
+                      aria-valuemin="0"
+                      aria-valuemax="100"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="stat-card">
+                <div class="d-flex justify-content-between">
+                  <div>
+                    <h5>Estimated Yield</h5>
+                    <h2 class="mb-0">{{ "{:,}".format(estimated_yield) }}</h2>
+                    <small class="text-muted">for current season</small>
+                  </div>
+                  <div class="stat-icon">
+                    <i class="fas fa-chart-line"></i>
+                  </div>
+                </div>
+                <div class="mt-3">
+                  <div class="d-flex justify-content-between mb-1">
+                    <small>Growth from 2022</small>
+                    {% set growth = ((estimated_yield - total_yield_2022) /
+                    total_yield_2022 * 100)|round(1) %}
+                    <small
+                      class="{% if growth > 0 %}text-success{% else %}text-danger{% endif %}"
+                    >
+                      {% if growth > 0 %}+{% endif %}{{ growth }}%
+                    </small>
+                  </div>
+                  <div class="progress" style="height: 10px">
+                    <div
+                      class="progress-bar {% if growth > 0 %}bg-success{% else %}bg-danger{% endif %}"
+                      role="progressbar"
+                      style="width: {{ growth if growth > 0 else -growth }}%"
+                      aria-valuenow="{{ growth if growth > 0 else -growth }}"
+                      aria-valuemin="0"
+                      aria-valuemax="100"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Charts Row -->
+          <div class="row mb-4">
+            <div class="col-md-8">
+              <div class="card">
+                <div class="card-header">
+                  <i class="fas fa-chart-line me-2"></i>Monthly Yield Trends
+                </div>
+                <div class="card-body">
+                  <canvas id="yieldTrendChart" height="250"></canvas>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="card">
+                <div class="card-header">
+                  <i class="fas fa-bug me-2"></i>Disease Reports
+                </div>
+                <div class="card-body">
+                  <!-- Dynamic disease summary that scales with any data structure -->
+                  <div class="mt-3 border-top pt-3">
+                    <h6 class="fw-bold">Disease Summary</h6>
+
+                    <!-- Calculate total reports -->
+                    {% set total_reports = 0 %} {% for disease, count in
+                    aggregate.disease_reports.items() %} {% set total_reports =
+                    total_reports + count %} {% endfor %}
+
+                    <div class="table-responsive">
+                      <table class="table table-sm table-hover">
+                        <thead>
+                          <tr>
+                            <th>Disease Type</th>
+                            <th>Reports</th>
+                            <th>Percentage</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {% for disease, count in
+                          aggregate.disease_reports.items() %}
+                          <tr>
+                            <td>{{ disease|replace('_', ' ')|title }}</td>
+                            <td>{{ count }}</td>
+                            <td>
+                              {% if total_reports > 0 %} {{ ((count /
+                              total_reports) * 100)|round(1) }}%
+                              <div class="progress" style="height: 4px">
+                                <div
+                                  class="progress-bar"
+                                  role="progressbar"
+                                  style="width: {{ ((count / total_reports) * 100)|round(1) }}%;"
+                                  aria-valuenow="{{ ((count / total_reports) * 100)|round(1) }}"
+                                  aria-valuemin="0"
+                                  aria-valuemax="100"
+                                ></div>
+                              </div>
+                              {% else %} 0% {% endif %}
+                            </td>
+                          </tr>
+                          {% endfor %}
+                        </tbody>
+                        <tfoot>
+                          <tr class="table-secondary">
+                            <th>Total</th>
+                            <th>{{ total_reports }}</th>
+                            <th>100%</th>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+
+                    <!-- Disease trends and insights -->
+                    <div class="alert alert-info small mt-2 mb-0">
+                      <i class="fas fa-info-circle me-1"></i>
+                      {% if aggregate.disease_reports.items()|list|length > 0 %}
+                      {% set most_common =
+                      aggregate.disease_reports.items()|sort(attribute=1,
+                      reverse=True)|first %} {% if most_common[1] > 0 %}
+                      <strong
+                        >{{ most_common[0]|replace('_', ' ')|title }}</strong
+                      >
+                      is the most common issue. Consider prioritizing treatment
+                      and prevention measures. {% else %} No significant disease
+                      issues detected at this time. {% endif %} {% else %} No
+                      disease data available. {% endif %}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Producers Section -->
+          <h4 class="mb-3">Active Producers</h4>
+          <div class="row mb-4">
+            {% for producer in producers %}
+            <div class="col-md-4 mb-4">
+              <div
+                class="card farmer-card"
+                onclick="window.location.href='/producer/{{ producer.id }}'"
+              >
+                <div class="card-body">
+                  <div class="d-flex align-items-center mb-3">
+                    <div>
+                      <h5 class="mb-0">{{ producer.name }}</h5>
+                      <p class="text-muted mb-0">{{ producer.village }}</p>
+                      <small>Last active: {{ producer.last_active }}</small>
+                    </div>
+                    {% if producer.tree_health.needs_attention|replace('%',
+                    '')|int > 5 %}
+                    <span class="notification-badge">!</span>
+                    {% endif %}
+                  </div>
+
+                  <div class="row mb-3">
+                    <div class="col-6">
+                      <small class="text-muted d-block">Farm Size</small>
+                      <span>{{ producer.farm_size_hectares }} hectares</span>
+                    </div>
+                    <div class="col-6">
+                      <small class="text-muted d-block">Trees</small>
+                      <span>{{ "{:,}".format(producer.num_trees) }}</span>
+                    </div>
+                  </div>
+
+                  <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                      <small>Tree Health</small>
+                      <small>{{ producer.tree_health.healthy }}% Healthy</small>
+                    </div>
+                    <div class="progress" style="height: 10px">
+                      <div
+                        class="progress-bar bg-success"
+                        role="progressbar"
+                        style="width: {{ producer.tree_health.healthy }}%"
+                        aria-valuenow="{{ producer.tree_health.healthy }}"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                      ></div>
+                      <div
+                        class="progress-bar bg-warning"
+                        role="progressbar"
+                        style="width: {{ producer.tree_health.minor_issues }}%"
+                        aria-valuenow="{{ producer.tree_health.minor_issues }}"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                      ></div>
+                      <div
+                        class="progress-bar bg-danger"
+                        role="progressbar"
+                        style="width: {{ producer.tree_health.needs_attention }}%"
+                        aria-valuenow="{{ producer.tree_health.needs_attention }}"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div class="row mb-3">
+                    <div class="col-6">
+                      <small class="text-muted d-block">2022 Yield</small>
+                      <span
+                        >{{ "{:,}".format(producer.yield_history['2022']) }}
+                        kg</span
+                      >
+                    </div>
+                    <div class="col-6">
+                      <small class="text-muted d-block">Est. Yield</small>
+                      <span
+                        >{{ "{:,}".format(producer.estimated_yield) }} kg</span
+                      >
+                    </div>
+                  </div>
+
+                  <div class="mt-2">
+                    <small class="text-muted d-block mb-1"
+                      >Recent Activity</small
+                    >
+                    <p class="mb-0 small">
+                      {{ producer.recent_activities[0].activity }}
+                    </p>
+                    <small class="text-muted"
+                      >{{ producer.recent_activities[0].date }}</small
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+
+          <!-- Second Row -->
+          <div class="row">
+            <!-- Chat Preview -->
+            <div class="col-md-4">
+              <div class="card">
+                <div class="card-header">
+                  <i class="fas fa-comments me-2"></i>Recent Messages
+                </div>
+                <div class="card-body chat-preview">
+                  <div id="chatPreview"></div>
+                </div>
+                <div class="card-footer">
+                  <button class="btn btn-primary w-100">
+                    View All Messages
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Diagnostics Summary -->
+            <div class="col-md-4">
+              <div class="card">
+                <div class="card-header">
+                  <i class="fas fa-clipboard-check me-2"></i>Recent Diagnostics
+                </div>
+                <div class="card-body">
+                  <div
+                    id="diagnosticsList"
+                    class="list-group list-group-flush"
+                  ></div>
+                </div>
+                <div class="card-footer">
+                  <button class="btn btn-outline-primary w-100">
+                    View All Diagnostics
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Weather and Training -->
+            <div class="col-md-4">
+              <div class="card weather-card mb-4">
+                <div class="card-body">
+                  <div
+                    class="d-flex justify-content-between align-items-center"
+                  >
+                    <div>
+                      <h5 class="card-title">Weather Forecast</h5>
+                      <h2 class="mb-0">28°C</h2>
+                      <p>Partly Cloudy</p>
+                    </div>
+                    <div>
+                      <i class="fas fa-cloud-sun fa-3x"></i>
+                    </div>
+                  </div>
+                  <div class="row mt-3">
+                    <div class="col-4 text-center">
+                      <div>Tomorrow</div>
+                      <i class="fas fa-sun"></i>
+                      <div>30°C</div>
+                    </div>
+                    <div class="col-4 text-center">
+                      <div>Wed</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bootstrap & jQuery JS -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Charts JS -->
+    <script>
+      // Main production chart
+      const productionChart = new Chart(
+          document.getElementById('productionChart'),
+          {
+              type: 'doughnut',
+              data: {
+                  labels: {{ countries_json|safe }},
+                  datasets: [{
+                      data: {{ production_json|safe }},
+                      backgroundColor: [
+                          '#8D6E63', '#A1887F', '#BCAAA4', '#D7CCC8',
+                          '#795548', '#6D4C41', '#5D4037'
+                      ],
+                      borderWidth: 1
+                  }]
+              },
+              options: {
+                  responsive: true,
+                  plugins: {
+                      legend: {
+                          position: 'right',
+                      },
+                      title: {
+                          display: false
+                      }
+                  }
+              }
+          }
+      );
+
+      // Quality chart
+      const qualityData = {{ quality_json|safe }};
+      const qualityChart = new Chart(
+          document.getElementById('qualityChart'),
+          {
+              type: 'bar',
+              data: {
+                  labels: Object.keys(qualityData),
+                  datasets: [{
+                      label: 'Quality Score',
+                      data: Object.values(qualityData),
+                      backgroundColor: '#A1887F',
+                      borderColor: '#8D6E63',
+                      borderWidth: 1
+                  }]
+              },
+              options: {
+                  indexAxis: 'y',
+                  responsive: true,
+                  plugins: {
+                      legend: {
+                          display: false
+                      }
+                  },
+                  scales: {
+                      x: {
+                          min: 0,
+                          max: 100
+                      }
+                  }
+              }
+          }
+      );
+
+      // Monthly production chart
+      const monthlyData = {{ monthly_json|safe }};
+      const monthlyChart = new Chart(
+          document.getElementById('monthlyChart'),
+          {
+              type: 'line',
+              data: {
+                  labels: monthlyData.months,
+                  datasets: [{
+                      label: '2022 Production (1000s MT)',
+                      data: monthlyData.production_2022,
+                      backgroundColor: 'rgba(93, 64, 55, 0.2)',
+                      borderColor: '#5D4037',
+                      borderWidth: 2,
+                      tension: 0.3,
+                      fill: true
+                  }]
+              },
+              options: {
+                  responsive: true,
+                  plugins: {
+                      legend: {
+                          display: false
+                      }
+                  }
+              }
+          }
+      );
+
+      // Trend chart
+      const trendData = {{ trend_json|safe }};
+      const years = {{ years_json|safe }};
+
+      const trendDatasets = [];
+      const colors = ['#8D6E63', '#A1887F', '#BCAAA4', '#D7CCC8', '#795548'];
+
+      Object.keys(trendData).forEach((country, index) => {
+          trendDatasets.push({
+              label: country,
+              data: trendData[country],
+              borderColor: colors[index % colors.length],
+              backgroundColor: 'transparent',
+              borderWidth: 2
+          });
+      });
+
+      const trendChart = new Chart(
+          document.getElementById('trendChart'),
+          {
+              type: 'line',
+              data: {
+                  labels: years,
+                  datasets: trendDatasets
+              },
+              options: {
+                  responsive: true
+              }
+          }
+      );
+
+      // Monthly Yield Trends Chart
+      document.addEventListener('DOMContentLoaded', function() {
+        // Get aggregate data from server
+        const aggregateData = {{ aggregate_json|safe }};
+
+        // Handle the monthly_yields data - ensure it's an object, not a string
+        let monthlyYields;
+
+        try {
+          // If monthly_yields is a string (JSON), parse it
+          if (typeof aggregateData.monthly_yields === 'string') {
+            monthlyYields = JSON.parse(aggregateData.monthly_yields);
+          } else {
+            // If it's already an object, use it directly
+            monthlyYields = aggregateData.monthly_yields;
+          }
+
+          // Verify the structure is as expected
+          if (!monthlyYields.months || !monthlyYields['2021'] || !monthlyYields['2022'] || !monthlyYields['2023']) {
+            console.error('Monthly yields data structure is not as expected:', monthlyYields);
+            return; // Exit if data structure isn't right
+          }
+
+          // Create the yield trend chart
+          const yieldTrendCtx = document.getElementById('yieldTrendChart').getContext('2d');
+          const yieldTrendChart = new Chart(yieldTrendCtx, {
+            type: 'line',
+            data: {
+              labels: monthlyYields.months,
+              datasets: [
+                {
+                  label: '2021 Yield',
+                  data: monthlyYields['2021'],
+                  backgroundColor: 'rgba(76, 175, 80, 0.2)',
+                  borderColor: '#4CAF50',
+                  borderWidth: 2,
+                  tension: 0.3,
+                  fill: true
+                },
+                {
+                  label: '2022 Yield',
+                  data: monthlyYields['2022'],
+                  backgroundColor: 'rgba(93, 64, 55, 0.2)',
+                  borderColor: '#5D4037',
+                  borderWidth: 2,
+                  tension: 0.3,
+                  fill: true
+                },
+                {
+                  label: '2023 Yield (Current)',
+                  data: monthlyYields['2023'],
+                  backgroundColor: 'rgba(255, 152, 0, 0.2)',
+                  borderColor: '#FF9800',
+                  borderWidth: 2,
+                  tension: 0.3,
+                  fill: true
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  position: 'top',
+                },
+                tooltip: {
+                  mode: 'index',
+                  intersect: false,
+                  callbacks: {
+                    label: function(context) {
+                      return context.dataset.label + ': ' + context.parsed.y + ' kg';
+                    }
+                  }
+                }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  title: {
+                    display: true,
+                    text: 'Yield (kg)'
+                  }
+                },
+                x: {
+                  title: {
+                    display: true,
+                    text: 'Month'
+                  }
+                }
+              }
+            }
+          });
+
+          // Log success
+          console.log('Monthly yield trends chart initialized successfully');
+
+        } catch (error) {
+          // Log any errors for debugging
+          console.error('Error initializing monthly yield trends chart:', error);
+
+          // Add a visible error message on the page
+          const chartContainer = document.getElementById('yieldTrendChart').parentNode;
+          chartContainer.innerHTML = `
+            <div class="alert alert-warning">
+              <i class="fas fa-exclamation-triangle mr-2"></i>
+              Unable to display yield trends chart. Data format error.
+            </div>
+          `;
+        }
+      });
+
+      // Disease reports chart
+      const diseaseChart = new Chart(
+          document.getElementById('diseaseChart'),
+          {
+              type: 'pie',
+              data: {
+                  labels: ['Black Pod', 'Swollen Shoot', 'Mirid Damage', 'Frosty Pod', 'Other'],
+                  datasets: [{
+                      data: [45, 25, 15, 10, 5],
+                      backgroundColor: [
+                          '#5D4037', '#8D6E63', '#FF9800', '#4CAF50', '#D7CCC8'
+                      ],
+                      borderWidth: 1
+                  }]
+              },
+              options: {
+                  responsive: true,
+                  plugins: {
+                      legend: {
+                          position: 'right'
+                      }
+                  }
+              }
+          }
+      );
+    </script>
+  </body>
+</html>

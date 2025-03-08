@@ -1,0 +1,12 @@
+producer_id,date,from,message
+1,2023-06-28,farmer,I've noticed some yellowing leaves on the east section.
+1,2023-06-28,advisor,Can you send a photo of the affected trees?
+1,2023-06-28,farmer,"Yes, I've uploaded 3 images through the app."
+1,2023-06-29,advisor,I've reviewed your images. This appears to be a minor nutrient deficiency. Please apply the recommended fertilizer we discussed last month.
+2,2023-06-25,farmer,When is the next pickup scheduled?
+2,2023-06-25,advisor,The next pickup is scheduled for July 5th. Please have your harvest ready by then.
+2,2023-06-25,farmer,"Great, thank you for the information."
+3,2023-06-27,farmer,The new irrigation system is working well.
+3,2023-06-27,advisor,Excellent news! Have you noticed any improvements in the trees?
+3,2023-06-27,farmer,"Yes, the younger trees are showing more growth."
+3,2023-06-27,advisor,That's great. Please monitor water usage and log it in the app.

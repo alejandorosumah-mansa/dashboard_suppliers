@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ producer.name }} - Producer Details</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #5D4037;
+            --secondary-color: #8D6E63;
+            --light-color: #D7CCC8;
+            --accent-color: #FF9800;
+            --success-color: #4CAF50;
+            --warning-color: #FFC107;
+            --danger-color: #F44336;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .sidebar {
+            background-color: var(--primary-color);
+            color: white;
+            height: 100%;
+            min-height: 100vh;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+        
+        .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            border-radius: 5px;
+            margin: 5px 0;
+            padding: 10px 15px;
+            transition: all 0.3s;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border: none;
+            margin-bottom: 20px;
+        }
+        
+        .card-header {
+            border-radius: 10px 10px 0 0 !important;
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: bold;
+        }
+        
+        .profile-header {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .profile-image {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 5px solid var(--light-color);
+        }
+        
+        .farm-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 10px;
+            transition: transform 0.3s;
+        }
+        
+        .farm-image:hover {
+            transform: scale(1.05);
+        }
+        
+        .badge-certification {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            margin-right: 5px;
+            margin-bottom: 5px;
+            display: inline-block;
+        }
+        
+        .message {
+            padding: 10px 15px;
+            border-radius: 15px;
+            margin-bottom: 10px;
+            max-width: 80%;
+        }
+        
+        .message.farmer {
+            background-color: var(--light-color);
+            margin-right: auto;
+        }
+        
+        .message.advisor {
+            background-color: var(--primary-color);
+            color: white;
+            margin-left: auto;
+        }
+        
+        .chat-container {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                z-index: 100;
+                min-height: auto;
+                height: auto;
+            }
+            
+            .sidebar .nav {
+                display: flex;
+                justify-content: space-around;
+            }
+            
+            .nav-link {
+                text-align: center;
+                padding: 10px;
+                margin: 0;
+            }
+            
+            .nav-link i {
+                display: block;
+                margin: 0 auto 5px;
+            }
+            
+            .main-content {
+                margin-bottom: 80px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-2 sidebar p-3">
+                <h4 class="text-center my-4">
+                    <i class="fas fa-seedling me-2"></i>CocoaLink
+                </h4>
+                <div class="d-flex flex-column">
+                    <a href="/" class="nav-link py-2 px-3">
+                        <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                    </a>
+                    <a href="#" class="nav-link active py-2 px-3">
+                        <i class="fas fa-users me-2"></i> Producers
+                    </a>
+                    <a href="#" class="nav-link py-2 px-3">
+                        <i class="fas fa-chart-line me-2"></i> Analytics
+                    </a>
+                    <a href="#" class="nav-link py-2 px-3">
+                        <i class="fas fa-leaf me-2"></i> Tree Health
+                    </a>
+                    <a href="#" class="nav-link py-2 px-3">
+                        <i class="fas fa-comment me-2"></i> Messages
+                    </a>
+                    <a href="#" class="nav-link py-2 px-3">
+                        <i class="fas fa-calendar-alt me-2"></i> Schedule
+                    </a>
+                    <a href="#" class="nav-link py-2 px-3">
+                        <i class="fas fa-file-alt me-2"></i> Reports
+                    </a>
+                    <a href="#" class="nav-link py-2 px-3">
+                        <i class="fas fa-cog me-2"></i> Settings
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="col-md-10 p-4 main-content">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>
+                        <a href="/" class="text-decoration-none text-dark">
+                            <i class="fas fa-arrow-left me-2"></i>
+                        </a>
+                        Producer Details
+                    </h2>
+                    <button class="btn btn-primary">
+                        <i class="fas fa-phone me-2"></i>Contact Producer
+                    </button>
+                </div>
+                
+                <!-- Profile Header -->
+                <div class="profile-header">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Producer Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <h4>{{ producer.name }}</h4>
+                                    <p class="text-muted">{{ producer.village }}</p>
+                                    
+                                    <div class="mt-3">
+                                        <p><strong>Farm Size:</strong> {{ producer.farm_size_hectares }} hectares</p>
+                                        <p><strong>Number of Trees:</strong> {{ producer.num_trees }}</p>
+                                        <p><strong>Joined:</strong> {{ producer.join_date }}</p>
+                                        <p><strong>Age:</strong> {{ producer.age }}</p>
+                                        <p><strong>Phone:</strong> {{ producer.phone }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Main Content Tabs -->
+                <ul class="nav nav-tabs mb-4" id="producerTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab" aria-controls="overview" aria-selected="true">Overview</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="diagnostics-tab" data-bs-toggle="tab" data-bs-target="#diagnostics" type="button" role="tab" aria-controls="diagnostics" aria-selected="false">Diagnostics</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="farm-tab" data-bs-toggle="tab" data-bs-target="#farm" type="button" role="tab" aria-controls="farm" aria-selected="false">Farm Images</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="messages-tab" data-bs-toggle="tab" data-bs-target="#messages" type="button" role="tab" aria-controls="messages" aria-selected="false">Messages</button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content" id="producerTabsContent">
+                    <!-- Overview Tab -->
+                    <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview-tab">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card mb-4">
+                                    <div class="card-header">
+                                        <i class="fas fa-chart-line me-2"></i>Yield History
+                                    </div>
+                                    <div class="card-body">
+                                        <canvas id="yieldChart" height="250"></canvas>
+                                    </div>
+                                </div>
+                                
+                                <div class="card mb-4">
+                                    <div class="card-header">Recent Activities</div>
+                                    <div class="card-body">
+                                        <ul class="list-group">
+                                            {% for activity in producer.recent_activities %}
+                                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <span class="badge bg-primary rounded-pill me-2">{{ activity.date }}</span>
+                                                    {{ activity.activity }}
+                                                </div>
+                                                <a href="/activity/{{ producer.id }}/{{ activity.date }}" class="btn btn-sm btn-outline-secondary">View Details</a>
+                                            </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="card mb-4">
+                                    <div class="card-header">
+                                        <i class="fas fa-flask me-2"></i>Soil Quality
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="card mb-3 border-0 bg-light">
+                                                    <div class="card-body text-center">
+                                                        <h3 class="mb-0">{{ producer.soil_quality.pH }}</h3>
+                                                        <p class="text-muted mb-0">pH Level</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            {% for nutrient, level in producer.soil_quality.items() %}
+                                                {% if nutrient != 'pH' %}
+                                                <div class="col-md-6 mb-3">
+                                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                                        <span>{{ nutrient|capitalize }}</span>
+                                                        <span>{{ level }}</span>
+                                                    </div>
+                                                    {% set bar_class = 'bg-success' %}
+                                                    {% if level == 'Low' %}
+                                                        {% set bar_width = 33 %}
+                                                        {% set bar_class = 'bg-danger' %}
+                                                    {% elif level == 'Medium' %}
+                                                        {% set bar_width = 66 %}
+                                                        {% set bar_class = 'bg-warning' %}
+                                                    {% else %}
+                                                        {% set bar_width = 100 %}
+                                                    {% endif %}
+                                                    <div class="progress" style="height: 10px;">
+                                                        <div class="progress-bar {{ bar_class }}" role="progressbar" style="width: {{ bar_width }}%" aria-valuenow="{{ bar_width }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                        
+                                        <div class="alert alert-info mt-3 mb-0">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            Based on the current soil analysis, we recommend applying phosphorus-rich fertilizer in the next 2 weeks.
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="card">
+                                    <div class="card-header">
+                                        <i class="fas fa-calendar-check me-2"></i>Upcoming Schedule
+                                    </div>
+                                    <div class="card-body">
+                                        <ul class="list-group list-group-flush">
+                                            <li class="list-group-item px-0">
+                                                <div class="d-flex justify-content-between">
+                                                    <div>
+                                                        <h6 class="mb-0">Harvest Collection</h6>
+                                                        <small class="text-muted">Scheduled pickup of dried beans</small>
+                                                    </div>
+                                                    <span class="badge bg-primary rounded-pill align-self-center">Jul 5</span>
+                                                </div>
+                                            </li>
+                                            <li class="list-group-item px-0">
+                                                <div class="d-flex justify-content-between">
+                                                    <div>
+                                                        <h6 class="mb-0">Pruning Workshop</h6>
+                                                        <small class="text-muted">Training on improved pruning techniques</small>
+                                                    </div>
+                                                    <span class="badge bg-primary rounded-pill align-self-center">Jul 12</span>
+                                                </div>
+                                            </li>
+                                            <li class="list-group-item px-0">
+                                                <div class="d-flex justify-content-between">
+                                                    <div>
+                                                        <h6 class="mb-0">Field Visit</h6>
+                                                        <small class="text-muted">Technical advisor inspection</small>
+                                                    </div>
+                                                    <span class="badge bg-primary rounded-pill align-self-center">Jul 18</span>
+                                                </div>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Diagnostics Tab -->
+                    <div class="tab-pane fade" id="diagnostics" role="tabpanel" aria-labelledby="diagnostics-tab">
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <div class="card h-100">
+                                    <div class="card-header">
+                                        <i class="fas fa-chart-pie me-2"></i>Tree Health Summary
+                                    </div>
+                                    <div class="card-body text-center">
+                                        <canvas id="treeHealthChart" height="200"></canvas>
+                                        <div class="mt-3">
+                                            <div class="d-flex justify-content-between mb-1">
+                                                <small class="text-success">Healthy: {{ producer.tree_health.healthy }}%</small>
+                                                <small class="text-warning">Minor Issues: {{ producer.tree_health.minor_issues }}%</small>
+                                                <small class="text-danger">Needs Attention: {{ producer.tree_health.needs_attention }}%</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-8">
+                                <div class="card h-100">
+                                    <div class="card-header">
+                                        <i class="fas fa-heartbeat me-2"></i>Diagnostic Trends
+                                    </div>
+                                    <div class="card-body">
+                                        <canvas id="diagnosticTrendChart" height="250"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="fas fa-clipboard-check me-2"></i>Recent Diagnostics
+                                </div>
+                                <div>
+                                    <select class="form-select form-select-sm" id="diagnosticFilter">
+                                        <option value="all">All Diagnostics</option>
+                                        <option value="critical">Critical Issues</option>
+                                        <option value="recent">Most Recent</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Tree ID</th>
+                                                <th>Health Score</th>
+                                                <th>Leaf Condition</th>
+                                                <th>Disease Risk</th>
+                                                <th>Recommended Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for diagnostic in diagnostics %}
+                                            <tr>
+                                                <td>{{ diagnostic.date }}</td>
+                                                <td>{{ diagnostic.tree_id }}</td>
+                                                <td>
+                                                    <span class="badge {% if diagnostic.health_score < 70 %}bg-danger{% elif diagnostic.health_score < 85 %}bg-warning{% else %}bg-success{% endif %}">
+                                                        {{ diagnostic.health_score }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    {{ diagnostic.leaf_condition }}
+                                                    {% if diagnostic.pest_detected %}
+                                                    <span class="badge bg-warning ms-1">Pest</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <span class="badge {% if diagnostic.disease_risk == 'High' %}bg-danger{% elif diagnostic.disease_risk == 'Medium' %}bg-warning{% else %}bg-success{% endif %}">
+                                                        {{ diagnostic.disease_risk }}
+                                                    </span>
+                                                </td>
+                                                <td>{{ diagnostic.recommended_action }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Farm Images Tab -->
+                    <div class="tab-pane fade" id="farm" role="tabpanel" aria-labelledby="farm-tab">
+                        <div class="row">
+                            {% for image in producer.farm_images %}
+                            <div class="col-md-6 mb-4">
+                                <div class="card">
+                                    <img src="{{ url_for('static', filename='img/' + image) }}" class="farm-image card-img-top" alt="Farm image" onerror="this.src='https://via.placeholder.com/800x500?text=Farm+Image'">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Farm Section {{ loop.index }}</h5>
+                                        <p class="card-text text-muted">Image captured on {{ (loop.index * 5 + 1)|string + '/06/2023' }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="text-center mt-3">
+                            <button class="btn btn-primary">
+                                <i class="fas fa-cloud-upload-alt me-2"></i>Upload New Images
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Messages Tab -->
+                    <div class="tab-pane fade" id="messages" role="tabpanel" aria-labelledby="messages-tab">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="fas fa-comments me-2"></i>Communication History
+                            </div>
+                            <div class="card-body chat-container">
+                                {% if chat_history.messages %}
+                                    {% for message in chat_history.messages %}
+                                    <div class="message {{ message.from }}">
+                                        <div class="message-content">
+                                            <div class="message-text">{{ message.message }}</div>
+                                            <div class="message-info text-muted small">
+                                                {{ message.date }} - {{ message.from|title }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <p class="text-center text-muted">No chat history available.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tree Health Chart
+            const treeHealthCtx = document.getElementById('treeHealthChart').getContext('2d');
+            const treeHealthData = {
+                labels: ['Healthy', 'Minor Issues', 'Needs Attention'],
+                datasets: [{
+                    data: [
+                        {{ producer.tree_health.healthy }}, 
+                        {{ producer.tree_health.minor_issues }}, 
+                        {{ producer.tree_health.needs_attention }}
+                    ],
+                    backgroundColor: [
+                        '#4CAF50',  // green
+                        '#FFC107',  // amber/yellow
+                        '#F44336'   // red
+                    ],
+                    borderWidth: 0
+                }]
+            };
+            
+            new Chart(treeHealthCtx, {
+                type: 'doughnut',
+                data: treeHealthData,
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 12,
+                                fontSize: 10
+                            }
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+        });
+    </script>
+</body>
+</html> 
