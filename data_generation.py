@@ -521,79 +521,11 @@ class ProducerDataProcessor:
 
     def create_dashboard_csvs(self, dataframes, insights):
         """Transform the extracted data into the format needed by the dashboard."""
-        # Create a cooperative info using OpenAI
-        try:
-            coop_prompt = f"""
-            Generate realistic cooperative information for a cocoa producers' cooperative in West Africa with {len(dataframes["producer_summary"])} members.
-            Return a JSON object with:
-            - name: A descriptive name for the cooperative
-            - location: A specific region/country in West Africa known for cocoa
-            - established: Year established (between 2000-2015)
-            - total_members: {len(dataframes["producer_summary"])}
-            - active_members: A realistic number of active members (slightly less than total)
-            - total_hectares: Total hectares under cultivation
-            - certification: A list of certifications the cooperative might have (2-4 certifications)
-            """
 
-            coop_response = openai.chat.completions.create(
-                model="gpt-4",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "You are a data specialist for agricultural cooperatives.",
-                    },
-                    {"role": "user", "content": coop_prompt},
-                ],
-                max_tokens=400,
-            )
+        # Load producer data from JSON
+        with open("producer_data/producer_data.json") as f:
+            producer_data = json.load(f)
 
-            coop_data_str = coop_response.choices[0].message.content
-            import re
-
-            json_match = re.search(r"({[\s\S]*})", coop_data_str)
-            if json_match:
-                coop_info = json.loads(json_match.group(1))
-                logging.info("Generated cooperative info using OpenAI API")
-            else:
-                # Fallback cooperative info
-                coop_info = {
-                    "name": "Cocoa Producers Cooperative",
-                    "location": "Ivory Coast",
-                    "established": 2010,
-                    "total_members": len(dataframes["producer_summary"]),
-                    "active_members": len(dataframes["producer_summary"]),
-                    "total_hectares": 500,
-                    "certification": ["Organic", "Fairtrade"],
-                }
-        except Exception as e:
-            logging.error(f"Error generating cooperative info with OpenAI: {e}")
-            # Fallback cooperative info
-            coop_info = {
-                "name": "Cocoa Producers Cooperative",
-                "location": "Ivory Coast",
-                "established": 2010,
-                "total_members": len(dataframes["producer_summary"]),
-                "active_members": len(dataframes["producer_summary"]),
-                "total_hectares": 500,
-                "certification": ["Organic", "Fairtrade"],
-            }
-
-        # Convert certifications to JSON string
-        coop_info["certification"] = json.dumps(coop_info["certification"])
-
-        coop_df = pd.DataFrame([coop_info])
-        coop_df.to_csv(f"{self.output_dir}/cooperative_info.csv", index=False)
-        logging.info(
-            f"Saved cooperative info to {self.output_dir}/cooperative_info.csv"
-        )
-
-        # Generate monthly yield data
-        monthly_yields = self.generate_monthly_yields_with_openai(dataframes)
-
-        # Generate disease reports
-        disease_reports = self.generate_disease_reports_with_openai(dataframes)
-
-        # Create producers data with AI-generated details
         producers = []
         for _, row in dataframes["producer_summary"].iterrows():
             producer_id = row["producer_id"]
@@ -638,6 +570,29 @@ class ProducerDataProcessor:
                 "last_active": row["last_active"]
                 or datetime.now().strftime("%Y-%m-%d"),
             }
+
+            # Extract user_name from producer_data's tree_images metadata
+            if (
+                producer_id in producer_data
+                and "tree_images" in producer_data[producer_id]
+            ):
+                tree_images = producer_data[producer_id]["tree_images"]
+                if tree_images:
+                    # Get the first image entry
+                    first_image_key = next(iter(tree_images))
+                    if (
+                        "metadata" in tree_images[first_image_key]
+                        and "user_name" in tree_images[first_image_key]["metadata"]
+                    ):
+                        producer["user_name"] = tree_images[first_image_key][
+                            "metadata"
+                        ]["user_name"]
+                    else:
+                        producer["user_name"] = "Unknown"
+                else:
+                    producer["user_name"] = "Unknown"
+            else:
+                producer["user_name"] = "Unknown"
 
             producers.append(producer)
 
@@ -690,8 +645,12 @@ class ProducerDataProcessor:
 
         # Create aggregate data with insights from OpenAI
         aggregate_data = {
-            "monthly_yields": json.dumps(monthly_yields),
-            "disease_reports": json.dumps(disease_reports),
+            "monthly_yields": json.dumps(
+                self.generate_monthly_yields_with_openai(dataframes)
+            ),
+            "disease_reports": json.dumps(
+                self.generate_disease_reports_with_openai(dataframes)
+            ),
             "training_attendance": json.dumps(training_attendance),
             "ai_insights": insights,
         }

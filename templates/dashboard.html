@@ -16,6 +16,19 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
+    <!-- Add Leaflet.js for mapping in the HEAD section -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet-heat@0.2.0/dist/leaflet-heat.js"></script>
     <style>
       :root {
         --primary-color: #5d4037;
@@ -221,6 +234,14 @@
           margin-bottom: 80px;
         }
       }
+
+      /* Ensure the map container has explicit dimensions */
+      #ivory-coast-map {
+        height: 400px;
+        width: 100%;
+        border: 1px solid #ddd;
+        z-index: 1; /* Ensure proper z-index for maps */
+      }
     </style>
   </head>
   <body>
@@ -238,30 +259,12 @@
             <a href="#" class="nav-link py-2 px-3">
               <i class="fas fa-users me-2"></i> Producers
             </a>
-            <a href="#" class="nav-link py-2 px-3">
-              <i class="fas fa-chart-line me-2"></i> Analytics
-            </a>
-            <a href="#" class="nav-link py-2 px-3">
-              <i class="fas fa-leaf me-2"></i> Tree Health
-            </a>
-            <a href="#" class="nav-link py-2 px-3">
-              <i class="fas fa-comment me-2"></i> Messages
-            </a>
-            <a href="#" class="nav-link py-2 px-3">
-              <i class="fas fa-calendar-alt me-2"></i> Schedule
-            </a>
-            <a href="#" class="nav-link py-2 px-3">
-              <i class="fas fa-file-alt me-2"></i> Reports
-            </a>
-            <a href="#" class="nav-link py-2 px-3">
-              <i class="fas fa-cog me-2"></i> Settings
-            </a>
           </div>
 
           <div class="mt-auto pt-4">
             <div class="text-center">
               <p class="mb-0 text-light">Latest app update:</p>
-              <small class="text-light">v2.3.4 - 2023-06-25</small>
+              <small class="text-light">v2.3.4 - 2025-03-28</small>
             </div>
           </div>
         </div>
@@ -278,21 +281,6 @@
                 <i class="fas fa-sync-alt me-1"></i> Last updated: Today 10:45
                 AM
               </button>
-            </div>
-          </div>
-
-          <!-- Alert Section -->
-          <div class="alert-section mb-4">
-            <div class="d-flex align-items-center">
-              <i class="fas fa-exclamation-triangle text-warning me-3 fs-4"></i>
-              <div>
-                <h5 class="mb-1">Recent Alerts</h5>
-                <p class="mb-0">
-                  5 producers reported pest issues in the last 7 days. 3
-                  producers have trees requiring immediate attention.
-                </p>
-              </div>
-              <button class="btn btn-warning ms-auto">View Details</button>
             </div>
           </div>
 
@@ -330,9 +318,6 @@
                   <div>
                     <h5>Total Trees</h5>
                     <h2 class="mb-0">{{ "{:,}".format(total_trees) }}</h2>
-                    <small class="text-muted"
-                      >across {{ coop_info.total_hectares }} hectares</small
-                    >
                   </div>
                   <div class="stat-icon">
                     <i class="fas fa-tree"></i>
@@ -356,36 +341,7 @@
                 </div>
               </div>
             </div>
-            <div class="col-md-3">
-              <div class="stat-card">
-                <div class="d-flex justify-content-between">
-                  <div>
-                    <h5>2022 Yield</h5>
-                    <h2 class="mb-0">{{ "{:,}".format(total_yield_2022) }}</h2>
-                    <small class="text-muted">kilograms of cocoa</small>
-                  </div>
-                  <div class="stat-icon">
-                    <i class="fas fa-balance-scale"></i>
-                  </div>
-                </div>
-                <div class="mt-3">
-                  <div class="d-flex justify-content-between mb-1">
-                    <small>Organic Certified</small>
-                    <small>84%</small>
-                  </div>
-                  <div class="progress" style="height: 10px">
-                    <div
-                      class="progress-bar bg-info"
-                      role="progressbar"
-                      style="width: 84%"
-                      aria-valuenow="84"
-                      aria-valuemin="0"
-                      aria-valuemax="100"
-                    ></div>
-                  </div>
-                </div>
-              </div>
-            </div>
+
             <div class="col-md-3">
               <div class="stat-card">
                 <div class="d-flex justify-content-between">
@@ -398,44 +354,12 @@
                     <i class="fas fa-chart-line"></i>
                   </div>
                 </div>
-                <div class="mt-3">
-                  <div class="d-flex justify-content-between mb-1">
-                    <small>Growth from 2022</small>
-                    {% set growth = ((estimated_yield - total_yield_2022) /
-                    total_yield_2022 * 100)|round(1) %}
-                    <small
-                      class="{% if growth > 0 %}text-success{% else %}text-danger{% endif %}"
-                    >
-                      {% if growth > 0 %}+{% endif %}{{ growth }}%
-                    </small>
-                  </div>
-                  <div class="progress" style="height: 10px">
-                    <div
-                      class="progress-bar {% if growth > 0 %}bg-success{% else %}bg-danger{% endif %}"
-                      role="progressbar"
-                      style="width: {{ growth if growth > 0 else -growth }}%"
-                      aria-valuenow="{{ growth if growth > 0 else -growth }}"
-                      aria-valuemin="0"
-                      aria-valuemax="100"
-                    ></div>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
 
           <!-- Charts Row -->
           <div class="row mb-4">
-            <div class="col-md-8">
-              <div class="card">
-                <div class="card-header">
-                  <i class="fas fa-chart-line me-2"></i>Monthly Yield Trends
-                </div>
-                <div class="card-body">
-                  <canvas id="yieldTrendChart" height="250"></canvas>
-                </div>
-              </div>
-            </div>
             <div class="col-md-4">
               <div class="card">
                 <div class="card-header">
@@ -513,176 +437,90 @@
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- Producers Section -->
-          <h4 class="mb-3">Active Producers</h4>
-          <div class="row mb-4">
-            {% for producer in producers %}
-            <div class="col-md-4 mb-4">
-              <div
-                class="card farmer-card"
-                onclick="window.location.href='/producer/{{ producer.id }}'"
-              >
+            <!-- Add Ivory Coast Map Heatmap -->
+            <div class="col-md-8">
+              <div class="card">
+                <div
+                  class="card-header d-flex justify-content-between align-items-center"
+                >
+                  <div>
+                    <i class="fas fa-map-marked-alt me-2"></i>Regional Analysis
+                  </div>
+                  <div class="btn-group btn-group-sm" role="group">
+                    <button
+                      type="button"
+                      class="btn btn-outline-primary active"
+                      id="yield-map-btn"
+                    >
+                      Yield
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-outline-danger"
+                      id="disease-map-btn"
+                    >
+                      Disease
+                    </button>
+                  </div>
+                </div>
                 <div class="card-body">
-                  <div class="d-flex align-items-center mb-3">
-                    <div>
-                      <h5 class="mb-0">{{ producer.name }}</h5>
-                      <p class="text-muted mb-0">{{ producer.village }}</p>
-                      <small>Last active: {{ producer.last_active }}</small>
+                  <!-- Map container with inline styles as a backup -->
+                  <div
+                    id="ivory-coast-map"
+                    style="height: 400px; width: 100%"
+                  ></div>
+                  <div class="mt-2 small text-muted">
+                    <div class="d-flex justify-content-between">
+                      <div id="map-legend-min">Low</div>
+                      <div id="map-legend-title">Estimated Yield</div>
+                      <div id="map-legend-max">High</div>
                     </div>
-                    {% if producer.tree_health.needs_attention|replace('%',
-                    '')|int > 5 %}
-                    <span class="notification-badge">!</span>
-                    {% endif %}
-                  </div>
-
-                  <div class="row mb-3">
-                    <div class="col-6">
-                      <small class="text-muted d-block">Farm Size</small>
-                      <span>{{ producer.farm_size_hectares }} hectares</span>
-                    </div>
-                    <div class="col-6">
-                      <small class="text-muted d-block">Trees</small>
-                      <span>{{ "{:,}".format(producer.num_trees) }}</span>
-                    </div>
-                  </div>
-
-                  <div class="mb-3">
-                    <div class="d-flex justify-content-between mb-1">
-                      <small>Tree Health</small>
-                      <small>{{ producer.tree_health.healthy }}% Healthy</small>
-                    </div>
-                    <div class="progress" style="height: 10px">
+                    <div class="progress" style="height: 8px">
                       <div
                         class="progress-bar bg-success"
                         role="progressbar"
-                        style="width: {{ producer.tree_health.healthy }}%"
-                        aria-valuenow="{{ producer.tree_health.healthy }}"
+                        style="width: 20%"
+                        aria-valuenow="20"
                         aria-valuemin="0"
                         aria-valuemax="100"
                       ></div>
                       <div
-                        class="progress-bar bg-warning"
-                        role="progressbar"
-                        style="width: {{ producer.tree_health.minor_issues }}%"
-                        aria-valuenow="{{ producer.tree_health.minor_issues }}"
+                        class="progress-bar bg-success"
+                        style="width: 20%; opacity: 0.8"
+                        aria-valuenow="20"
                         aria-valuemin="0"
                         aria-valuemax="100"
                       ></div>
                       <div
-                        class="progress-bar bg-danger"
-                        role="progressbar"
-                        style="width: {{ producer.tree_health.needs_attention }}%"
-                        aria-valuenow="{{ producer.tree_health.needs_attention }}"
+                        class="progress-bar bg-success"
+                        style="width: 20%; opacity: 0.6"
+                        aria-valuenow="20"
                         aria-valuemin="0"
                         aria-valuemax="100"
                       ></div>
-                    </div>
-                  </div>
-
-                  <div class="row mb-3">
-                    <div class="col-6">
-                      <small class="text-muted d-block">2022 Yield</small>
-                      <span
-                        >{{ "{:,}".format(producer.yield_history['2022']) }}
-                        kg</span
-                      >
-                    </div>
-                    <div class="col-6">
-                      <small class="text-muted d-block">Est. Yield</small>
-                      <span
-                        >{{ "{:,}".format(producer.estimated_yield) }} kg</span
-                      >
-                    </div>
-                  </div>
-
-                  <div class="mt-2">
-                    <small class="text-muted d-block mb-1"
-                      >Recent Activity</small
-                    >
-                    <p class="mb-0 small">
-                      {{ producer.recent_activities[0].activity }}
-                    </p>
-                    <small class="text-muted"
-                      >{{ producer.recent_activities[0].date }}</small
-                    >
-                  </div>
-                </div>
-              </div>
-            </div>
-            {% endfor %}
-          </div>
-
-          <!-- Second Row -->
-          <div class="row">
-            <!-- Chat Preview -->
-            <div class="col-md-4">
-              <div class="card">
-                <div class="card-header">
-                  <i class="fas fa-comments me-2"></i>Recent Messages
-                </div>
-                <div class="card-body chat-preview">
-                  <div id="chatPreview"></div>
-                </div>
-                <div class="card-footer">
-                  <button class="btn btn-primary w-100">
-                    View All Messages
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Diagnostics Summary -->
-            <div class="col-md-4">
-              <div class="card">
-                <div class="card-header">
-                  <i class="fas fa-clipboard-check me-2"></i>Recent Diagnostics
-                </div>
-                <div class="card-body">
-                  <div
-                    id="diagnosticsList"
-                    class="list-group list-group-flush"
-                  ></div>
-                </div>
-                <div class="card-footer">
-                  <button class="btn btn-outline-primary w-100">
-                    View All Diagnostics
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Weather and Training -->
-            <div class="col-md-4">
-              <div class="card weather-card mb-4">
-                <div class="card-body">
-                  <div
-                    class="d-flex justify-content-between align-items-center"
-                  >
-                    <div>
-                      <h5 class="card-title">Weather Forecast</h5>
-                      <h2 class="mb-0">28°C</h2>
-                      <p>Partly Cloudy</p>
-                    </div>
-                    <div>
-                      <i class="fas fa-cloud-sun fa-3x"></i>
-                    </div>
-                  </div>
-                  <div class="row mt-3">
-                    <div class="col-4 text-center">
-                      <div>Tomorrow</div>
-                      <i class="fas fa-sun"></i>
-                      <div>30°C</div>
-                    </div>
-                    <div class="col-4 text-center">
-                      <div>Wed</div>
+                      <div
+                        class="progress-bar bg-success"
+                        style="width: 20%; opacity: 0.4"
+                        aria-valuenow="20"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                      ></div>
+                      <div
+                        class="progress-bar bg-success"
+                        style="width: 20%; opacity: 0.2"
+                        aria-valuenow="20"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                      ></div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
+
+          <!-- Remove the active producers section -->
         </div>
       </div>
     </div>
@@ -954,6 +792,130 @@
               }
           }
       );
+    </script>
+
+    <!-- Geospatial map of Ivory Coast with administrative boundaries -->
+    <script>
+      // Geospatial map of Ivory Coast with administrative boundaries
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("Initializing geospatial map of Ivory Coast");
+
+        try {
+          // Initialize a Leaflet map centered on Ivory Coast
+          const map = L.map("ivory-coast-map").setView([7.54, -5.5472], 7);
+
+          // Add Google Satellite tile layer as the base map
+          L.tileLayer("http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}", {
+            maxZoom: 20,
+            subdomains: ["mt0", "mt1", "mt2", "mt3"],
+            attribution: "&copy; Google Maps",
+          }).addTo(map);
+
+          console.log("Base satellite map initialized");
+
+          // Load Ivory Coast GeoJSON with administrative boundaries
+          fetch(
+            "https://raw.githubusercontent.com/isellsoap/francophone-divisions/master/data/geojson/civ.divisions.1.geo.json"
+          )
+            .then((response) => {
+              console.log("GeoJSON response received");
+              return response.json();
+            })
+            .then((data) => {
+              console.log("GeoJSON data loaded successfully");
+
+              // Style for the administrative boundaries
+              const geojsonStyle = {
+                fillColor: "transparent",
+                weight: 2,
+                opacity: 1,
+                color: "white",
+                dashArray: "3",
+                fillOpacity: 0,
+              };
+
+              // Add GeoJSON layer with administrative boundaries
+              const boundariesLayer = L.geoJSON(data, {
+                style: geojsonStyle,
+                onEachFeature: function (feature, layer) {
+                  if (feature.properties && feature.properties.name) {
+                    layer.bindPopup(`<b>${feature.properties.name}</b>`);
+                  }
+                },
+              }).addTo(map);
+
+              console.log("Administrative boundaries added to map");
+
+              // Fit the map to the boundaries
+              map.fitBounds(boundariesLayer.getBounds());
+            })
+            .catch((error) => {
+              console.error("Error loading Ivory Coast GeoJSON:", error);
+              document.getElementById("ivory-coast-map").innerHTML +=
+                '<div class="alert alert-warning mt-2">Unable to load Ivory Coast boundaries. Check console for details.</div>';
+            });
+
+          // Add markers for major cities
+          const cities = [
+            { name: "Abidjan", coords: [5.3364, -4.0267], isCapital: false },
+            {
+              name: "Yamoussoukro",
+              coords: [6.8276, -5.2893],
+              isCapital: true,
+            },
+            { name: "Bouaké", coords: [7.6906, -5.0404], isCapital: false },
+            { name: "Daloa", coords: [6.8898, -6.45], isCapital: false },
+            { name: "Korhogo", coords: [9.4578, -5.6295], isCapital: false },
+            { name: "San-Pédro", coords: [4.7485, -6.6367], isCapital: false },
+          ];
+
+          // Custom icons for regular cities and capital
+          const cityIcon = L.icon({
+            iconUrl:
+              "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@master/img/marker-icon-blue.png",
+            shadowUrl:
+              "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41],
+          });
+
+          const capitalIcon = L.icon({
+            iconUrl:
+              "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@master/img/marker-icon-red.png",
+            shadowUrl:
+              "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41],
+          });
+
+          // Add city markers to the map
+          cities.forEach((city) => {
+            L.marker(city.coords, {
+              icon: city.isCapital ? capitalIcon : cityIcon,
+            })
+              .addTo(map)
+              .bindPopup(
+                `<b>${city.name}</b>${city.isCapital ? " (Capital)" : ""}`
+              );
+          });
+
+          // Ensure the map renders correctly
+          setTimeout(function () {
+            map.invalidateSize();
+            console.log("Map size refreshed");
+          }, 500);
+        } catch (error) {
+          console.error("Failed to initialize map:", error);
+          document.getElementById("ivory-coast-map").innerHTML =
+            '<div class="alert alert-danger p-3">Map failed to load: ' +
+            error.message +
+            "</div>";
+        }
+      });
     </script>
   </body>
 </html>

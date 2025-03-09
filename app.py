@@ -110,7 +110,6 @@ def dashboard():
     aggregate = producers_data["aggregate"]
 
     # Calculate summary statistics
-    print(producers)
     total_trees = sum(p["num_trees"] for p in producers)
     avg_health = (
         sum(
@@ -125,7 +124,6 @@ def dashboard():
         if producers
         else 0
     )
-    total_yield_2022 = sum(p["yield_history"]["2022"] for p in producers)
     estimated_yield_current = sum(p["estimated_yield"] for p in producers)
 
     # Convert data to JSON for JavaScript
@@ -140,7 +138,6 @@ def dashboard():
         producers=producers,
         total_trees=total_trees,
         avg_health=avg_health,
-        total_yield_2022=total_yield_2022,
         estimated_yield=estimated_yield_current,
         producers_json=producers_json,
         chat_json=chat_json,
@@ -213,4 +210,4 @@ if __name__ == "__main__":
     if not os.path.exists("static/img"):
         os.makedirs("static/img")
 
-    app.run(debug=True, port=5009)
+    app.run(debug=True, port=5011)
